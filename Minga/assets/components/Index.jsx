@@ -1,52 +1,108 @@
-import React from 'react'
+import { useDispatch, useSelector } from 'react-redux/es';
+import { useState } from 'react';
+import { StyleSheet, Text, View, Image, ImageBackground, Alert, TextInput, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Image, ImageBackground, TextInput, TouchableOpacity} from 'react-native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import saveAuthor from '../redux/actions/me_authors';
+
+const imgFondo = { uri: "https://static.wikia.nocookie.net/dragonballfanon/images/2/29/Goku149.jpg/revision/latest/scale-to-width-down/320?cb=20160112153207&path-prefix=es" }
+const insta = { uri: "https://cdn.icon-icons.com/icons2/1753/PNG/512/iconfinder-social-media-applications-3instagram-4102579_113804.png" }
+const faceBook = { uri: "https://cdn.icon-icons.com/icons2/99/PNG/512/facebook_socialnetwork_17442.png" }
+const tweeter = { uri: "https://cdn.icon-icons.com/icons2/1211/PNG/512/1491579583-yumminkysocialmedia02_83111.png" }
 
 
-const imgFondo = {uri: "https://static.wikia.nocookie.net/dragonballfanon/images/2/29/Goku149.jpg/revision/latest/scale-to-width-down/320?cb=20160112153207&path-prefix=es"}
-const insta = {uri: "https://cdn.icon-icons.com/icons2/1753/PNG/512/iconfinder-social-media-applications-3instagram-4102579_113804.png"}
-const faceBook = {uri: "https://cdn.icon-icons.com/icons2/99/PNG/512/facebook_socialnetwork_17442.png"}
-const tweeter = {uri: "https://cdn.icon-icons.com/icons2/1211/PNG/512/1491579583-yumminkysocialmedia02_83111.png"}
-const Index = () => {
+const Index = ({ navigation }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
+  const dispatch = useDispatch();
+  const { user } = useSelector((store) => store.me_authorsReducer);
+  console.log(user)
+
+  async function enviarData() {
+    const userData = {
+      email: email,
+      password: password,
+    };
+
+    try {
+      const credenciales = await axios.post("https://backendminga.onrender.com/auth/signin",userData);
+      const authToken = credenciales.data.response.token;
+      dispatch(saveAuthors(authToken));
+      await AsyncStorage.setItem("token", authToken);
+      await AsyncStorage.setItem("user", credenciales.data.response.user.email);
+      setToken(authToken);
+    } catch (error) {
+      console.log("error feo", error);
+      setToken(""); 
+      Alert.alert('Login Failed', 'Please check your email and password.');
+    }
+  }
+
   return (
     <ImageBackground style={styles.container} source={imgFondo} resizeMode="cover">
-        <View style={styles.contenedor}>
-          <Text style={styles.textoPrincipal}>Minga雪</Text>
-          <Text style={styles.textoSecundario}>Welcome to the manga multiverse</Text>
-        </View>
-        <View style={styles.loginBackground}>
-          <Text style={styles.signin}>Sign In</Text>
-          <Text style={styles.loginTexts}>Email:</Text>
-          <TextInput style={styles.textInput}/>
-          <Text style={styles.loginTexts} >Password:</Text>
-          <TextInput style={styles.textInput} secureTextEntry={true}/>
-          <TouchableOpacity style={styles.touchableLogin}>
-            <Text style={styles.loginButtonText}>Go!</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.touchableRegister}>
-            <Text style={styles.registerButtonText}>Register</Text>
-          </TouchableOpacity>
-          <StatusBar style='auto' />
-        </View>
-        <View style={styles.contRedes}>
-          <Image style={styles.redes} source={insta}/>
-          <Image style={styles.redes} source={faceBook}/>
-          <Image style={styles.redes} source={tweeter}/>
-        </View>
+      <View style={styles.contenedor}>
+        <Text style={styles.textoPrincipal}>Minga雪</Text>
+        <Text style={styles.textoBienvenida}>Welcome to the manga multiverse</Text>
+        <TouchableOpacity style={styles.touchableMangas}>
+          <Text style={styles.mangasButtonText} onPress={() => navigation.navigate("Mangas")}>Go to Mangas!</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.loginBackground}>
+        <Text style={styles.signin}>Sign In</Text>
+        <Text style={styles.loginTexts}>Email:</Text>
+        <TextInput style={styles.textInput} onChangeText={(text) => setEmail(text)} />
+        <Text style={styles.loginTexts} >Password:</Text>
+        <TextInput style={styles.textInput} secureTextEntry={true} onChangeText={(text) => setPassword(text)} />
+        <TouchableOpacity style={styles.touchableLogin} onPress={async () => {
+          await enviarData();
+          if (token) {
+            navigation.navigate("Mangas");
+          } else {
+           navigation.navigate("Home")
+          }
+        }}>
+          <Text style={styles.loginButtonText} >Go!</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.touchableRegister} onPress={() => navigation.navigate("Register")}>
+          <Text style={styles.registerButtonText}>Register</Text>
+        </TouchableOpacity>
+        <StatusBar style='auto' />
+      </View>
+      <View style={styles.contRedes}>
+        <Image style={styles.redes} source={insta} />
+        <Image style={styles.redes} source={faceBook} />
+        <Image style={styles.redes} source={tweeter} />
+      </View>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  signin:{
-    fontSize:25,
-    color:"white",
-    marginBottom:20,
+  touchableMangas: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2196f3',
+    width: 200,
+    height: 40,
+    borderRadius: 15,
+    marginTop: 15,
+  },
+  mangasButtonText: {
+    color: 'white',
+    fontSize: 25,
     fontWeight: 'bold',
   },
-  contenedor:{
-    
-    width:300,
+  signin: {
+    fontSize: 25,
+    color: "white",
+    marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  contenedor: {
+    width: 300,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -57,27 +113,40 @@ const styles = StyleSheet.create({
     color: '#FF8125',
     fontSize: 60,
     fontWeight: 'bold',
-    textAlign: 'center'
+    textAlign: 'center',
+    marginBottom: 15,
   },
-  textoSecundario:{
+  textoSecundario: {
     fontSize: 20,
     textAlign: 'center',
-    color:"white",
+    color: "white",
     fontWeight: 'bold',
+    backgroundColor: "#FF8125"
   },
-  contRedes:{
+  textoBienvenida: {
+    fontSize: 20,
+    textAlign: 'center',
+    color: "white",
+    fontWeight: 'bold',
+    backgroundColor: "#FF8125",
+    width: 300,
+    borderRadius: 5,
+
+  },
+  contRedes: {
     display: "flex",
-    width:300,
-    flexDirection:"row",
-    justifyContent:"space-between",
-  },  
-  redes:{
+    width: 300,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  redes: {
     width: 50,
     height: 50,
-  },  
-  colortext:{
+  },
+  colortext: {
     color: "white",
-    
+
   },
   container: {
     flex: 1,
@@ -90,16 +159,13 @@ const styles = StyleSheet.create({
     width: 250,
     backgroundColor: 'white',
     marginVertical: 20,
-    opacity: 0.7,
-    
   },
   loginTexts: {
     fontSize: 15,
     display: 'flex',
     width: 250,
-    color: "white",
+    color: "black",
     fontWeight: 'bold',
-    
   },
   loginBackground: {
     display: 'flex',
@@ -107,10 +173,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     opacity: 1,
     width: 300,
-    height: 350,
+    height: 320,
     backgroundColor: '#FF8125',
     paddingVertical: 20,
-    marginVertical: 70,
+    marginVertical: 40,
     borderRadius: 10
   },
   touchableLogin: {
@@ -132,12 +198,12 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15
   },
-  loginButtonText:{
+  loginButtonText: {
     color: 'white',
     fontSize: 15,
     fontWeight: 'bold'
   },
-  registerButtonText:{
+  registerButtonText: {
     color: 'white',
     fontSize: 15,
     fontWeight: 'bold',
